@@ -18,7 +18,7 @@ def sanitize_username(username):
     return username.replace(' ', '%20')
 
 def sanitize_fn(fn):
-    return "".join(i for i in fn if i not in "\/:*?<>|(),")
+    return "".join(i for i in fn if i not in '"\/:*?<>|(),')
 
 class AWBW():
     def __init__(self, username, password):
@@ -168,3 +168,6 @@ class AWBW():
         for rank, username, rating in self.get_leaderboard(mode=mode, rank_limit=rank_limit, rating_limit=rating_limit):
             print(rank, username, rating)
             self.get_available_user_replays(username, path=path)
+
+username = 'XXXXX'
+password = 'XXXXX'
