@@ -7,6 +7,6 @@ Usage example:
 >>> import awbw
 >>> aw = awbw.AWBW(USERNAME, PASSWORD)
 >>> aw.save_leaderboard_replays(rating_limit=1300, rank_limit=100, mode='std')
->>> aw.get_available_user_replays('elio')
+>>> aw.get_available_user_replays('elio', day_limit=8)
 >>> aw.download_replay(replay_id=800008)
 ```
