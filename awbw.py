@@ -4,6 +4,7 @@ import datetime
 import re
 import logging
 import requests
+import pandas as pd
 from requests.adapters import HTTPAdapter, Retry
 
 login_url = "https://awbw.amarriner.com/logincheck.php"
@@ -11,6 +12,7 @@ download_url = "https://awbw.amarriner.com/replay_download.php?games_id=%d"
 game_url = "https://awbw.amarriner.com/2030.php?games_id=%d"
 user_url = "https://awbw.amarriner.com/profile.php?username=%s"
 user_games_url = "https://awbw.amarriner.com/gamescompleted.php?username=%s&type=%s"
+user_replays_url = "https://awbw.amarriner.com/gamescompleted.php?start=%d&username=%s"
 leaderboard_url = "https://awbw.amarriner.com/newleague_standings.php?type=%s&time=all"
 default_save_path = '.'
 
@@ -103,10 +105,17 @@ class AWBW():
                 end_day = json.loads(line.split('endData = ')[1].split(';')[0])['day']
             elif '<a href="2030.php?games_id=' in line:
                 game_name = line.split('>')[-2].split('<')[0]
+                
+        for line in lines:
+            if 'let fogInfo =' in line:
+                if line.split("=")[1][1] == "[":
+                    fog = True
+                elif line.split("=")[1][1:-1] == "null;":
+                    fog = False
         
         co1, co2 = [playersInfo[player_id]['co_name'] for player_id in player_ids]
         
-        return {'id':game_id, 'name':game_name, 'player1':player1, 'player2':player2, 'co1':co1, 'co2':co2, 'map':map_name, 'day':end_day, 'winner':winner}
+        return {'id':game_id, 'name':game_name, 'player1':player1, 'player2':player2, 'co1':co1, 'co2':co2, 'map':map_name, 'day':end_day, 'winner':winner, 'fog':fog}
     
     def get_available_user_replays(self, username, mode=None, path=None, day_limit=8):
         #Note, only 50 max of STD or FOG games (page limit)
@@ -141,6 +150,27 @@ class AWBW():
             if 'Official' in line1:
                 return float(line2.split('>')[-1].split('&')[0])
         return -1, lines
+    
+    def parse_user_games(self, username):
+        i = 1
+        game_ids = []
+        while True:
+            ret = self.session.get(user_replays_url % (i, username))
+            data = ret.content.decode(encoding='utf-8', errors='ignore')
+            lines = data.split('\n')
+            game_ids_ = []
+            for line in lines:
+                if ('<a class=norm href=2030.php?games_id=' in line):
+                    game_id = int(line.split("=")[-1].split(">")[0])
+                    game_ids_.append(game_id)
+            if len(game_ids_) == 0:
+                break
+            else:
+                game_ids += game_ids_
+                i += len(game_ids_)
+        game_infos = [self.parse_game(game_id) for game_id in game_ids]
+        df = pd.DataFrame({key:[game_info[key] for game_info in game_infos] for key in game_infos[0].keys()})
+        return df
     
     def get_leaderboard(self, mode='fog', rank_limit=100, rating_limit=1200):
         ret = self.session.get(leaderboard_url % mode)
