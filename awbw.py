@@ -7,6 +7,9 @@ import requests
 import pandas as pd
 from requests.adapters import HTTPAdapter, Retry
 
+username = 'XXXXX'
+password = 'XXXXX'
+
 login_url = "https://awbw.amarriner.com/logincheck.php"
 download_url = "https://awbw.amarriner.com/replay_download.php?games_id=%d"
 game_url = "https://awbw.amarriner.com/2030.php?games_id=%d"
@@ -23,7 +26,7 @@ def sanitize_fn(fn):
     return "".join(i for i in fn if i not in '"\/:*?<>|(),')
 
 class AWBW():
-    def __init__(self, username, password):
+    def __init__(self, username=username, password=password):
         self.session = requests.Session()
         retries = Retry(total=5, backoff_factor=2, status_forcelist=[502, 503, 504])
         adapter = HTTPAdapter(max_retries=retries)
@@ -198,6 +201,3 @@ class AWBW():
         for rank, username, rating in self.get_leaderboard(mode=mode, rank_limit=rank_limit, rating_limit=rating_limit):
             print(rank, username, rating)
             self.get_available_user_replays(username, path=path)
-
-username = 'XXXXX'
-password = 'XXXXX'
